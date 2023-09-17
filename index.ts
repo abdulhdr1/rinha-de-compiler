@@ -1,18 +1,15 @@
 import { rm } from "node:fs/promises";
 import { Operation, File, Term } from "./types";
 
-const fileName = "fib";
+const filePath = Bun.argv[2];
+const file = Bun.file(filePath);
+if (!(await file.exists())) throw new Error("File does not exist");
+main(JSON.parse(await file.text()) as File);
 
-async function main() {
-	console.time(fileName);
-	const astFile = Bun.file(`./files/${fileName}.json`);
+async function main(file: File) {
+	const result = evaluate(file);
 
-	const ast: File = JSON.parse(await astFile.text());
-
-	const result = evaluate(ast);
-
-	Bun.write(`./files/${fileName}.js`, result);
-	console.timeEnd(fileName);
+	Bun.write(`./out.js`, result);
 }
 
 function evaluate(ast: File): string {
@@ -22,22 +19,6 @@ function evaluate(ast: File): string {
 		throw new Error("Malformed AST");
 	}
 }
-
-const operations: { [Op in Operation]: string } = {
-	Add: "+",
-	Sub: "-",
-	Mul: "*",
-	Div: "/",
-	Rem: "%",
-	Eq: "==",
-	Neq: "!=",
-	Lt: "<",
-	Gt: ">",
-	Lte: "<=",
-	Gte: ">=",
-	And: "&&",
-	Or: "||",
-};
 
 function evaluateTerm(term: Term, isInsideFn = false): string {
 	switch (term.kind) {
@@ -65,8 +46,37 @@ function evaluateTerm(term: Term, isInsideFn = false): string {
 		case "Binary":
 			const lhs = evaluateTerm(term.lhs);
 			const rhs = evaluateTerm(term.rhs);
-			const op = operations[term.op];
-			return `${lhs} ${op} ${rhs}`;
+			switch (term.op) {
+				case "Add":
+					return `${lhs} + ${rhs}`;
+				case "Sub":
+					return `${lhs} - ${rhs}`;
+				case "Mul":
+					return `${lhs} * ${rhs}`;
+				case "Div":
+					return `${lhs} / ${rhs}`;
+				case "Rem":
+					return `${lhs} % ${rhs}`;
+				case "Eq":
+					return `${lhs} == ${rhs}`;
+				case "Neq":
+					return `${lhs} != ${rhs}`;
+				case "Lt":
+					return `${lhs} < ${rhs}`;
+				case "Gt":
+					return `${lhs} > ${rhs}`;
+				case "Lte":
+					return `${lhs} <= ${rhs}`;
+				case "Gte":
+					return `${lhs} >= ${rhs}`;
+				case "And":
+					return `${lhs} && ${rhs}`;
+				case "Or":
+					return `${lhs} || ${rhs}`;
+				default:
+					const _exhaustiveCheck: never = term.op;
+					throw new Error("Invalid operation");
+			}
 		case "Let":
 			const name = term.name.text;
 			const value = evaluateTerm(term.value);
@@ -109,5 +119,3 @@ function evaluateTerm(term: Term, isInsideFn = false): string {
 			throw new Error("Invalid term kind");
 	}
 }
-
-main();
