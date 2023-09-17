@@ -1,5 +1,5 @@
 import { rm } from "node:fs/promises";
-import { Operation, Program, Term } from "./types";
+import { Operation, File, Term } from "./types";
 
 const fileName = "fib";
 
@@ -7,7 +7,7 @@ async function main() {
 	console.time(fileName);
 	const astFile = Bun.file(`./files/${fileName}.json`);
 
-	const ast: Program = JSON.parse(await astFile.text());
+	const ast: File = JSON.parse(await astFile.text());
 
 	const result = evaluate(ast);
 
@@ -15,7 +15,7 @@ async function main() {
 	console.timeEnd(fileName);
 }
 
-function evaluate(ast: Program): string {
+function evaluate(ast: File): string {
 	if (ast.expression) {
 		return evaluateTerm(ast.expression);
 	} else {
@@ -91,6 +91,19 @@ function evaluateTerm(term: Term, isInsideFn = false): string {
 			return String(term.value);
 		case "Int":
 			return String(term.value);
+		case "Tuple":
+			return `[${term.first}, ${term.second}]`;
+		case "First":
+			if (term.value.kind === "Tuple") {
+				return evaluateTerm(term.value.first);
+			}
+
+			throw new Error("Invalid use of First on non Tuple value");
+		case "Second":
+			if (term.value.kind === "Tuple") {
+				return evaluateTerm(term.value.second);
+			}
+			throw new Error("Invalid use of Second on non Tuple value");
 		default:
 			const _exhaustiveCheck: never = term;
 			throw new Error("Invalid term kind");
