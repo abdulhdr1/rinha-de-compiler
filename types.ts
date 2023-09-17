@@ -18,10 +18,11 @@ export type Operation =
 	| "And" // And, &&
 	| "Or"; // Or, ||
 
-export type Var = {
+export type Parameter = {
 	text: string;
 	location: Location;
 };
+
 export type Term =
 	| {
 			// Literal Bool, true
@@ -50,7 +51,7 @@ export type Term =
 	| {
 			// Function Expression, fn (x, y) => value
 			kind: "Function";
-			parameters: Var[];
+			parameters: Parameter[];
 			value: Term;
 			location: Location;
 	  }
@@ -72,7 +73,7 @@ export type Term =
 	| {
 			// Let Expression, let x = value; next
 			kind: "Let";
-			name: Var;
+			name: Parameter;
 			value: Term;
 			next: Term;
 			location: Location;
@@ -90,8 +91,24 @@ export type Term =
 			kind: "Print";
 			value: Term;
 			location: Location;
+	  }
+	| {
+			kind: "Tuple";
+			first: Term;
+			second: Term;
+			location: Location;
+	  }
+	| {
+			kind: "First";
+			value: Term;
+			location: Location;
+	  }
+	| {
+			kind: "Second";
+			value: Term;
+			location: Location;
 	  };
-export type Program = {
+export type File = {
 	name: String;
 	expression: Term;
 	location: Location;
